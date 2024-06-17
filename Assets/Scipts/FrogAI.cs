@@ -1,8 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
-public class FrogAI : MonoBehaviour
+public class FrogAI : Enemy
 {
 
     [SerializeField] private float leftCap;
@@ -13,16 +14,14 @@ public class FrogAI : MonoBehaviour
     [SerializeField] private LayerMask ground;
 
     private Collider2D coll;
-    private Rigidbody2D rb;
-    private Animator animator;
-
+    private new  Animator animator;
     private bool facingLeft = true;
 
-    private void Start()
+    protected override void Start()
     {
+        base.Start();
         coll = GetComponent<Collider2D>();
-        rb = GetComponent<Rigidbody2D>();
-        animator = GetComponent<Animator>();
+      
     }
 
     private void Update()
@@ -96,4 +95,7 @@ public class FrogAI : MonoBehaviour
             }
         }
     }
+
+   
+    
 }

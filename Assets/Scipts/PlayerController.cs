@@ -2,13 +2,16 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
+using UnityEngine.SceneManagement;
+
 public class PlayerController : MonoBehaviour
 {
     // start variables
     private Rigidbody2D rb;
     private Animator animator;
     private Collider2D coll;
-
+   
   
 
     //FSM thay doi moi thu dua tren thanh tra
@@ -21,9 +24,11 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private LayerMask ground;
     [SerializeField] private float speed = 5f;
     [SerializeField] private float jumpForce = 10f;
-    [SerializeField] private int cherries = 0;
-    [SerializeField] private Text cherryText;
+    
     [SerializeField] private float hurtForce = 10f;
+    [SerializeField] private AudioSource cherryAudio;
+    [SerializeField] private AudioSource footstep;
+  
 
 
 
@@ -32,6 +37,8 @@ public class PlayerController : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
         coll = GetComponent<Collider2D>();
+        PermanenUI.perm.healthAmount.text = PermanenUI.perm.health.ToString();
+      
     }
     private void Update()
     {
@@ -50,9 +57,17 @@ public class PlayerController : MonoBehaviour
     {
         if(collision.tag == "Collectable")
         {
+            cherryAudio.Play();
             Destroy(collision.gameObject);
-            cherries += 1;
-            cherryText.text = cherries.ToString();
+            PermanenUI.perm.cherries += 1;
+            PermanenUI.perm.cherryText.text = PermanenUI.perm.cherries.ToString();
+        }
+        if(collision.tag == "Powerup")
+        {
+            Destroy(collision.gameObject);
+            jumpForce = 15f;
+            GetComponent<SpriteRenderer>().color = Color.yellow;
+            StartCoroutine(ResetPower());
         }
     }
 
@@ -60,15 +75,18 @@ public class PlayerController : MonoBehaviour
     {
         if (other.gameObject.tag == "Enemy" )
         {
-            if( state == State.falling)
+            Enemy enemy = other.gameObject.GetComponent<Enemy>();
+
+            if ( state == State.falling)
             {
-                Destroy(other.gameObject);
+                enemy.JumpedOn();
                 jump();
             }
             else
             {
                 state = State.hurt;
-                if(other.gameObject.transform.position.x  > transform.position.x)
+                HandleHealth();  // deal with health , updating ui ,and will reset level if health is <= 0
+                if (other.gameObject.transform.position.x > transform.position.x)
                 {
                     // enemy is to my right therefore i should be damaged and move left
                     rb.velocity = new Vector2(-hurtForce, rb.velocity.y);
@@ -79,9 +97,20 @@ public class PlayerController : MonoBehaviour
                     rb.velocity = new Vector2(hurtForce, rb.velocity.y);
                 }
             }
-            
+
         }
     }
+
+    private void HandleHealth()
+    {
+        PermanenUI.perm.health -= 1;
+        PermanenUI.perm.healthAmount.text = PermanenUI.perm.health.ToString();
+        if (PermanenUI.perm.health <= 0)
+        {
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        }
+    }
+
     private void Movement()
     {
         float hDirection = Input.GetAxis("Horizontal");
@@ -146,6 +175,18 @@ public class PlayerController : MonoBehaviour
         {
             state= State.idle;
         }
+    }
+
+    private void Footstep()
+    {
+        footstep.Play(); ;
+    }
+
+    private IEnumerator ResetPower()
+    {
+        yield return new WaitForSeconds(5);
+        jumpForce = 12;
+        GetComponent<SpriteRenderer>().color = Color.white;
     }
 
 }
